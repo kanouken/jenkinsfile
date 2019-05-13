@@ -1,3 +1,9 @@
+def notifyBuild(String groupId, String result,String jobName) {
+    def template = "勿回复此消息\n ${jobName}-${result}\n ${env.BUILD_URL}"
+    // Send notifications
+    sh "curl  -d 'group_id=${groupId}&message=${template}' 'coolq:5700/send_group_msg'"
+}
+
 def call(Map config) {
    node {
    def imageName 
@@ -93,9 +99,5 @@ def call(Map config) {
 }
 
 
-def notifyBuild(String groupId, String result,String jobName) {
-    def template = "勿回复此消息\n ${jobName}-${result}\n ${env.BUILD_URL}"
-    // Send notifications
-    sh "curl  -d 'group_id=${groupId}&message=${template}' 'coolq:5700/send_group_msg'"
-}
+
 }
