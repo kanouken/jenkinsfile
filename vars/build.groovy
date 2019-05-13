@@ -4,36 +4,42 @@ def notifyBuild(String groupId, String result,String jobName) {
     sh "curl  -d 'group_id=${groupId}&message=${template}' 'coolq:5700/send_group_msg'"
 }
 
+//vars/build.groovy main 方法
 def call(Map config) {
    node {
    def imageName 
    def jobName
    def tag
-   //docker registry 
+   //docker registry  此变量在jenkins已在全局变量配置
    def registry = dockerRegistry
-   def namespace = config.namespace
+   //k8s 部署到k8s空间    
+   def namespace = config.namespace 
    //拉取代码
    checkout scm
    def gradle = tool 'gradle'
-   
-   def mvn = tool 'maven'   
-
-
-   
+   def maven = tool 'maven'   
    try{
-   //编译代码 并执行单元测试
+   //编译代码 目前支持 maven 、gradle
    stage('Build') {
        jobName = JOB_NAME.substring(0,JOB_NAME.indexOf("/"))
-       if (BRANCH_NAME.startsWith("release/")) {
+     
+        if (BRANCH_NAME.startsWith("release/")) {
         //release  jobname:release-xx
         imageName =  JOB_NAME.substring(0,JOB_NAME.indexOf("/")) + ":" + BRANCH_NAME.replaceAll("/","-")
-       	sh "${gradle}/bin/gradle clean build -i -x test"
+            if(config.buildTool == 'gradle'){
+              	sh "${gradle}/bin/gradle clean build -i -x test"
+            }else{
+                sh "${maven}/bin/mvn clean package -e -U -Dmaven.test.skip=true"
+            }
        } else {
-        imageName =  JOB_NAME.substring(0,JOB_NAME.indexOf("/")) + ":" + BRANCH_NAME
-        //skip test for non release version
-        sh "${gradle}/bin/gradle clean buildx -i -x test"
+         imageName =  JOB_NAME.substring(0,JOB_NAME.indexOf("/")) + ":" + BRANCH_NAME
+         if(config.buildTool == 'gradle'){
+              	sh "${gradle}/bin/gradle clean build -i -x test"
+            }else{
+                sh "${maven}/bin/mvn clean package -e -U -Dmaven.test.skip=true"
+            }
        }
-
+ 
    }
    
    stage('SonarQube find bugs') {
@@ -68,7 +74,7 @@ def call(Map config) {
    stage("deploy") {
    		//首次部署需要自行创建服务
    		if(BUILD_NUMBER == 1){
-   	  		echo "请在rancher 中创建,命名为 : ${jobName}-deploy" 
+   	  		print "请在rancher 中创建,命名为 : ${jobName}-deploy" 
    	 	}else{
    	 	//在 k8s 中更新
    		  sh "/var/jenkins_home/rancher_cli/rancher kubectl patch deployment ${jobName} -p  '{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"build-num\":\"$BUILD_NUMBER\"}}}}}' -n ${namespace}"
