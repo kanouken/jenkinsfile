@@ -88,13 +88,13 @@ def call(Map config) {
    
    } catch (e) {
            currentBuild.result = "FAILED"
-           notifyBuild(config.groupId,"Build failed",jobName)
+           notifyBuild(config.messageGroupId,"Build failed",jobName)
            throw e
        } finally {
           def result =   currentBuild.result == null? "SUCCESS" : currentBuild.result
           
           if (result == 'SUCCESS'){
-             notifyBuild(config.groupId,"Build Success",jobName)
+             notifyBuild(config.messageGroupId,"Build Success",jobName)
           }
 
            
