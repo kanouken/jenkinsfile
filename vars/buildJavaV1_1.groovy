@@ -31,13 +31,14 @@ def call(Map config) {
         if (BRANCH_NAME.startsWith("release/")) {
         //release  jobname:version
         imageName = jobname + ":" + BRANCH_NAME.replaceAll("/","-")
-          
-       }
+        namespace = namespace + "prd"  
+       }else
        if(BRANCH_NAME == "develop"){
-         imageName = jobname + ":unstable" 
-       }
-       if (BRANCH_NAME.startsWith("feature/") || BRANCH_NAME.startsWith("bugfix/")) {
-         //do nothing
+         imageName = jobname + ":unstable"
+         namespace = namespace + "test"  
+       }else
+       {
+         //do nothing branch master 、feature、bugfix
          currentBuild.result = 'SUCCESS'
          return
        }
@@ -99,9 +100,7 @@ def call(Map config) {
              notifyBuild(config.messageGroupId,"Build Success",jobName)
           }
 
-           
-
-
+        
   }
  
 }
