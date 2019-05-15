@@ -1,3 +1,5 @@
+def gradle = tool 'gradle'
+def maven = tool 'maven'   
 def notifyBuild(String groupId, String result,String jobName) {
     def template = "勿回复此消息\n ${jobName}-${result}\n ${env.BUILD_URL}"
     // Send notifications
@@ -23,8 +25,7 @@ def call(Map config) {
    def namespace = config.namespace 
    //拉取代码
    checkout scm
-   def gradle = tool 'gradle'
-   def maven = tool 'maven'   
+   
    try{
    //编译代码 目前支持 maven 、gradle
    stage('Build') {
