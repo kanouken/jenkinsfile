@@ -3,7 +3,7 @@ def call(Map config){
     node {
  
     checkout scm
-    def path  = config.path == null ? "" : "cd" + config.path + " &&"
+    def path  = config.path == null ? "" : "cd " + config.path + " &&"
     def gradle = tool 'gradle'
     def maven  = tool 'maven'
     stage('Build') {
