@@ -5,14 +5,15 @@ def notifyBuild(String groupId, String result,String jobName) {
 }
 def compile(Map config){
            if(config.buildTool == 'gradle'){
-              	sh "${gradle}/bin/gradle clean build -i -x test"
+              	sh "${path} ${gradle}/bin/gradle clean build -i -x test"
             }else{
-                sh "${maven}/bin/mvn clean package -e -U -Dmaven.test.skip=true"
+                sh "${path} ${maven}/bin/mvn clean package -e -U -Dmaven.test.skip=true"
             }
 }
 //vars/build.groovy main 方法
 def call(Map config) {
    node {
+   def path  = config.path == null ? "" : "cd " + config.path + " &&"    
    def imageName 
    def jobName
    def tag
@@ -48,29 +49,29 @@ def call(Map config) {
    stage('SonarQube find bugs') {
         def sonarScanner = tool 'sonarScanner'
         withSonarQubeEnv() {
-            sh "${sonarScanner}/bin/sonar-scanner"
+            sh "${path} ${sonarScanner}/bin/sonar-scanner"
         }
     }
    // docker 编译镜像
    stage('docker build') {
-   		sh "docker build -t ${imageName} ."
+   		sh "${path} docker build -t ${imageName} ."
    }
    
    //docker 打tag
    stage('docker tag ') {
    		tag = registry + "/"+namespace+ "/" +imageName
-   		sh "docker tag  ${imageName} ${tag}"
+   		sh "${path} docker tag  ${imageName} ${tag}"
    }
    
    //将镜像 推送到私有仓库
    stage("docker push") {
-   		sh "docker push ${tag}"
+   		sh "${path} docker push ${tag}"
    }
    
    //清除本地镜像
    stage("docker clear") {
-   		sh "docker rmi ${imageName}"
-   		sh "docker rmi ${tag}"
+   		sh "${path} docker rmi ${imageName}"
+   		sh "${path} docker rmi ${tag}"
    }
    
    //部署服务
