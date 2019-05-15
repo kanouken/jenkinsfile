@@ -61,7 +61,7 @@ def call(Map config) {
    
    //docker 打tag
    stage('docker tag ') {
-   		tag = registry + "/"+namespace+ "/" +imageName
+   		tag = registry + "/"+config.namespace + "/" +imageName
    		sh "${path} docker tag  ${imageName} ${tag}"
    }
    
