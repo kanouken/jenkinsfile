@@ -31,12 +31,12 @@ def call(Map config) {
          print BRANCH_NAME
         jobName = JOB_NAME.substring(0,JOB_NAME.indexOf("/"))
         if (BRANCH_NAME.startsWith("release/")) {
-        //release  jobname:version
-        imageName = jobname + ":" + BRANCH_NAME.replaceAll("/","-")
+        //release  jobName:version
+        imageName = jobName + ":" + BRANCH_NAME.replaceAll("/","-")
         namespace = namespace + "prd"  
        }else
        if(BRANCH_NAME == "develop"){
-         imageName = jobname + ":unstable"
+         imageName = jobName + ":unstable"
          namespace = namespace + "test"  
        }else
        {
@@ -93,13 +93,13 @@ def call(Map config) {
    
    } catch (e) {
            currentBuild.result = "FAILED"
-           notifyBuild(config.messageGroupId,"Build failed",jobName)
+           notifyBuild(config.messageGroupId,"Build failed",jobName+"("+ BRANCH_NAME + ")")
            throw e
        } finally {
           def result =   currentBuild.result == null? "SUCCESS" : currentBuild.result
           
           if (result == 'SUCCESS'){
-             notifyBuild(config.messageGroupId,"Build Success",jobName)
+             notifyBuild(config.messageGroupId,"Build Success",jobName +"("+ BRANCH_NAME + ")")
           }
 
         
