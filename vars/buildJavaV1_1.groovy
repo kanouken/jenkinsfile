@@ -1,17 +1,10 @@
-def gradle = tool 'gradle'
-def maven = tool 'maven'   
+  
 def notifyBuild(String groupId, String result,String jobName) {
     def template = "勿回复此消息\n ${jobName}-${result}\n ${env.BUILD_URL}"
     // Send notifications
     sh "curl  -d 'group_id=${groupId}&message=${template}' 'coolq:5700/send_group_msg'"
 }
-def compile(Map config){
-           if(config.buildTool == 'gradle'){
-              	sh "${path} ${gradle}/bin/gradle clean build -i -x test"
-            }else{
-                sh "${path} ${maven}/bin/mvn clean package -e -U -Dmaven.test.skip=true"
-            }
-}
+
 //vars/build.groovy main 方法
 def call(Map config) {
    node {
@@ -25,7 +18,8 @@ def call(Map config) {
    def namespace = config.namespace 
    //拉取代码
    checkout scm
-   
+   def gradle = tool 'gradle'
+   def maven = tool 'maven' 
    try{
    //编译代码 目前支持 maven 、gradle
    stage('Build') {
@@ -45,7 +39,13 @@ def call(Map config) {
          currentBuild.result = 'SUCCESS'
          return
        }
-       compile(config)
+     
+           if(config.buildTool == 'gradle'){
+              	sh "${path} ${gradle}/bin/gradle clean build -i -x test"
+            }else{
+                sh "${path} ${maven}/bin/mvn clean package -e -U -Dmaven.test.skip=true"
+            }
+
    }
    
    stage('SonarQube find bugs') {
