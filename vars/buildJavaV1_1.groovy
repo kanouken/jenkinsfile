@@ -28,11 +28,11 @@ def call(Map config) {
         if (BRANCH_NAME.startsWith("release/")) {
         //release  jobName:version
         imageName = jobName + ":" + BRANCH_NAME.replaceAll("/","-")
-        namespace = namespace + "prd"  
+        namespace = namespace + "-prd"  
        }else
        if(BRANCH_NAME == "develop"){
          imageName = jobName + ":unstable"
-         namespace = namespace + "test"  
+         namespace = namespace + "-test"  
        }else
        {
          //do nothing branch master 、feature、bugfix
