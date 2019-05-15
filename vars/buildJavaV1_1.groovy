@@ -28,6 +28,7 @@ def call(Map config) {
    try{
    //编译代码 目前支持 maven 、gradle
    stage('Build') {
+         print BRANCH_NAME
         jobName = JOB_NAME.substring(0,JOB_NAME.indexOf("/"))
         if (BRANCH_NAME.startsWith("release/")) {
         //release  jobname:version
