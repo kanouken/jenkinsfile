@@ -12,6 +12,7 @@ def call(Map config) {
    def imageName 
    def jobName
    def tag
+   def deploy = true
    //docker registry  此变量在jenkins已在全局变量配置
    def registry = dockerRegistry
    //k8s 部署到k8s空间    
@@ -26,24 +27,21 @@ def call(Map config) {
          print BRANCH_NAME
          print BUILD_TAG
         jobName = JOB_NAME.substring(0,JOB_NAME.indexOf("/"))
-        //rc-1.0.0
+        //测试环境
         if (BRANCH_NAME.startsWith("release/")) {
         imageName = jobName + ":" + BRANCH_NAME.replaceAll("release","rc").replaceAll("/","-")
-        namespace = namespace + "-test"  
-       }else
-       if(BRANCH_NAME == "develop"){
+        namespace = namespace + "-test"
+        //开发环境  
+       }else if(BRANCH_NAME == "develop"){
          imageName = jobName + ":unstable"
-         namespace = namespace + "-dev"  
-       }else if(BRANCH_NAME.startsWith("feature/"))
-       {
-        
-       }else if(BRANCH_NAME.startsWith("bugfix/")){
-
-       }else if(BRANCH_NAME == "master"){
-            
-
+         namespace = namespace + "-dev"
+        //uat && prd   
+       }else if(BRANCH_NAME.startsWith("v")){
+            imageName = jobName + ":" +  BRANCH_NAME
+            namespace = namespace + "-uat"  
+        //no deploy
        }else{
-           return;
+          deploy = false
        }
      
            if(config.buildTool == 'gradle'){
@@ -59,7 +57,8 @@ def call(Map config) {
         withSonarQubeEnv() {
             sh "${path} ${sonarScanner}/bin/sonar-scanner"
         }
-    }
+   }
+   if(deploy) {
    // docker 编译镜像
    stage('docker build') {
    		sh "${path} docker build -t ${imageName} ."
@@ -93,7 +92,8 @@ def call(Map config) {
    	 	  
         }
    }
-
+  
+   }
    
    
 
