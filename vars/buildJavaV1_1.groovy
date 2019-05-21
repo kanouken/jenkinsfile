@@ -13,6 +13,7 @@ def call(Map config) {
    def jobName
    def tag
    def deploy = true
+   def env
    //docker registry  此变量在jenkins已在全局变量配置
    def registry = dockerRegistry
    //k8s 部署到k8s空间    
@@ -29,8 +30,10 @@ def call(Map config) {
         //release
         imageName = jobName + ":" + BRANCH_NAME
         namespace = namespace + "-prd"  
+        env = "prd"
        }else if(BRANCH_NAME == "master"){
         imageName = jobName + ":" + BRANCH_NAME
+        env = "test"
        }else
        {
         deploy = false
@@ -39,7 +42,7 @@ def call(Map config) {
            if(config.buildTool == 'gradle'){
               	sh "${path} ${gradle}/bin/gradle clean build -i -x test"
             }else{
-                sh "${path} ${maven}/bin/mvn clean package -e -U -Dmaven.test.skip=true"
+                sh "${path} ${maven}/bin/mvn clean package -e -U -P ${env} -Dmaven.test.skip=true"
             }
 
    }
