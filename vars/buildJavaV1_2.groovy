@@ -44,20 +44,20 @@ def call(Map config) {
           deploy = false
        }
      
-           /*if(config.buildTool == 'gradle'){
+           if(config.buildTool == 'gradle'){
               	sh "${path} ${gradle}/bin/gradle clean build -i -x test"
             }else{
                 sh "${path} ${maven}/bin/mvn clean package -e -U -Dmaven.test.skip=true"
-            } */
+            } 
 
    }
    
-   /*stage('SonarQube find bugs') {
+   stage('SonarQube find bugs') {
         def sonarScanner = tool 'sonarScanner'
         withSonarQubeEnv() {
             sh "${path} ${sonarScanner}/bin/sonar-scanner"
         }
-   }*/
+   }
    if(deploy) {
    // docker 编译镜像
    stage('docker build') {
