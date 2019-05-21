@@ -39,8 +39,10 @@ def call(Map config) {
        }else if(BRANCH_NAME.startsWith("bugfix/")){
 
        }else if(BRANCH_NAME == "master"){
-            // git tag
+            
 
+       }else{
+           return;
        }
      
            if(config.buildTool == 'gradle'){
