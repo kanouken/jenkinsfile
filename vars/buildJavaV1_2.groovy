@@ -52,12 +52,12 @@ def call(Map config) {
 
    }
    
-   stage('SonarQube find bugs') {
+   /*stage('SonarQube find bugs') {
         def sonarScanner = tool 'sonarScanner'
         withSonarQubeEnv() {
             sh "${path} ${sonarScanner}/bin/sonar-scanner"
         }
-   }
+   }*/
    if(deploy) {
    // docker 编译镜像
    stage('docker build') {
