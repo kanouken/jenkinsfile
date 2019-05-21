@@ -12,6 +12,7 @@ def call(Map config) {
    def imageName 
    def jobName
    def tag
+   def deploy = true
    //docker registry  此变量在jenkins已在全局变量配置
    def registry = dockerRegistry
    //k8s 部署到k8s空间    
@@ -23,21 +24,16 @@ def call(Map config) {
    try{
    //编译代码 目前支持 maven 、gradle
    stage('Build') {
-         print BRANCH_NAME
         jobName = JOB_NAME.substring(0,JOB_NAME.indexOf("/"))
-        if (BRANCH_NAME.startsWith("release/")) {
-        //release  jobName:version
-        imageName = jobName + ":" + BRANCH_NAME.replaceAll("/","-")
+        if (BRANCH_NAME.startsWith("release-")) {
+        //release
+        imageName = jobName + ":" + BRANCH_NAME
         namespace = namespace + "-prd"  
-       }else
-       if(BRANCH_NAME == "develop"){
-         imageName = jobName + ":unstable"
-         namespace = namespace + "-test"  
+       }else if(BRANCH_NAME == "master"){
+        imageName = jobName + ":" + BRANCH_NAME
        }else
        {
-         //do nothing branch master 、feature、bugfix
-         currentBuild.result = 'SUCCESS'
-         return
+        deploy = false
        }
      
            if(config.buildTool == 'gradle'){
@@ -54,6 +50,7 @@ def call(Map config) {
             sh "${path} ${sonarScanner}/bin/sonar-scanner"
         }
     }
+   if(deploy) { 
    // docker 编译镜像
    stage('docker build') {
    		sh "${path} docker build -t ${imageName} ."
@@ -88,7 +85,7 @@ def call(Map config) {
         }
    }
 
-   
+   }
    
 
    
