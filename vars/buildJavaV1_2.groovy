@@ -40,6 +40,10 @@ def call(Map config) {
             imageName = jobName + ":" +  BRANCH_NAME
             namespace = namespace + "-uat"  
         //no deploy
+       }else if(BRANCH_NAME == "master"){
+        //FIXME 为了之前项目的测试 加的这一条件 全部转化后 请去掉
+        imageName = jobName + ":master"
+          
        }else{
           deploy = false
        }
