@@ -1,3 +1,9 @@
+def notifyBuild(String groupId, String result,String jobName) {
+    def template = "勿回复此消息\n ${jobName}-${result}\n ${env.BUILD_URL}"
+    // Send notifications
+    sh "curl  -d 'group_id=${groupId}&message=${template}' 'coolq:5700/send_group_msg'"
+}
+
 def call(Map config){
   node {
    def imageName
@@ -6,7 +12,7 @@ def call(Map config){
    //docker registry
    def registry = 
    def namespace = config.namespace
-
+   def deploy = true
    //拉取代码
    checkout scm
 
@@ -20,24 +26,38 @@ def call(Map config){
    try{
    stage('Build') {
        jobName = JOB_NAME.substring(0,JOB_NAME.indexOf("/"))
-       if (BRANCH_NAME.startsWith("release/")) {
-        //release  jobname:release-xx
-        imageName =  JOB_NAME.substring(0,JOB_NAME.indexOf("/")) + ":" + BRANCH_NAME.replaceAll("/","-")
-
-        sh "rm -rf ./node_modules/cyberway-msf-frontend-* && rm -f ./package-lock.json"
-
-        sh "${nodejs}/bin/npm install --registry=http://192.168.0.5:8980/repository/npmGroup/"
-        sh "${nodejs}/bin/npm run build"
-
-       } else {
-        imageName =  JOB_NAME.substring(0,JOB_NAME.indexOf("/")) + ":" + BRANCH_NAME
-
-        sh "rm -rf ./node_modules/cyberway-msf-frontend-* && rm -f ./package-lock.json"
-        sh "${nodejs}/bin/npm install --registry=http://192.168.0.5:8980/repository/npmGroup/"
-        sh "${nodejs}/bin/npm run build"
+        //测试环境
+        if (BRANCH_NAME.startsWith("release/")) {
+        imageName = jobName + ":" + BRANCH_NAME.replaceAll("release","rc").replaceAll("/","-")
+        namespace = namespace + "-test"
+        //开发环境  
+       }else if(BRANCH_NAME == "develop"){
+         imageName = jobName + ":unstable"
+         namespace = namespace + "-dev"
+        //uat && prd   
+       }else if(BRANCH_NAME.startsWith("v")){
+            imageName = jobName + ":" +  BRANCH_NAME
+            namespace = namespace + "-uat"  
+        //no deploy
+       }else if(BRANCH_NAME == "master"){
+        //FIXME 为了之前项目的测试 加的这一条件 全部转化后 请去掉
+        imageName = jobName + ":master"
+          
+       }else{
+          deploy = false
        }
+       
+        if(config.preScript && config.preScript != null){
+          sh "${config.preScript}"
+        }
+        //sh "rm -rf ./node_modules/cyberway-msf-frontend-* && rm -f ./package-lock.json"
+        sh "npm install --registry=http://192.168.0.5:8980/repository/npmGroup/"
+        sh "npm run build"
+
+    
 
    }
+   if(deploy){
    // docker 编译镜像
    stage('docker build') {
    		sh "docker build -t ${imageName} ."
@@ -45,7 +65,7 @@ def call(Map config){
 
    //docker 打tag
    stage('docker tag ') {
-   		tag = registry + "/"+namespace+ "/" +imageName
+   		tag = registry + "/"+config.namespace+ "/" +imageName
    		sh "docker tag  ${imageName} ${tag}"
    }
 
@@ -64,30 +84,25 @@ def call(Map config){
    stage("deploy") {
    		//首次部署需要自行创建服务
    		if(BUILD_NUMBER == 1){
-   	  		echo "请在rancher 中创建,命名为 : ${jobName}-deploy"
+   	  		print "请在rancher 中创建,命名为 : ${jobName}-deploy"
    	 	}else{
    	 	//在 k8s 中更新
    		    sh "/var/jenkins_home/rancher_cli/rancher kubectl patch deployment ${jobName} -p  '{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"build-num\":\"$BUILD_NUMBER\"}}}}}' -n ${namespace}"
    	 	}
    }
 
+}
    } catch (e) {
-
-          mail to: 'czeqin@cyberway.net.cn',
-                       subject: "Failed Pipeline: ${currentBuild.fullDisplayName}",
-                       body: "Something is wrong with ${env.BUILD_URL}"
+           currentBuild.result = "FAILED"
+           notifyBuild(config.messageGroupId,"Build failed",jobName+"("+ BRANCH_NAME + ")")
            throw e
        } finally {
-           def currentResult = currentBuild.result ?: 'SUCCESS'
-           if (currentResult == 'UNSTABLE') {
-           }
+          def result =   currentBuild.result == null? "SUCCESS" : currentBuild.result
+          
+          if (result == 'SUCCESS'){
+             notifyBuild(config.messageGroupId,"Build Success",jobName +"("+ BRANCH_NAME + ")")
+          }
 
-           def previousResult = currentBuild.previousBuild?.result
-           if (previousResult != null && previousResult != currentResult) {
-           }
-
-
-       }
 
 }
 
