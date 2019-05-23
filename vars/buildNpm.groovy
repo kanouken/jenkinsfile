@@ -89,20 +89,21 @@ def call(Map config){
    	 	//在 k8s 中更新
    		    sh "/var/jenkins_home/rancher_cli/rancher kubectl patch deployment ${jobName} -p  '{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"build-num\":\"$BUILD_NUMBER\"}}}}}' -n ${namespace}"
    	 	}
+            }
    }
 
-}
+
    } catch (e) {
            currentBuild.result = "FAILED"
            notifyBuild(config.messageGroupId,"Build failed",jobName+"("+ BRANCH_NAME + ")")
            throw e
-       } finally {
+    } finally {
           def result =   currentBuild.result == null? "SUCCESS" : currentBuild.result
           
           if (result == 'SUCCESS'){
              notifyBuild(config.messageGroupId,"Build Success",jobName +"("+ BRANCH_NAME + ")")
           }
-
+       }
 
 }
 
