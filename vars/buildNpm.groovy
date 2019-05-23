@@ -10,7 +10,7 @@ def call(Map config){
    def jobName
    def tag
    //docker registry
-   def registry = 
+   def registry = dockerRegistry
    def namespace = config.namespace
    def deploy = true
    //拉取代码
