@@ -9,8 +9,8 @@ def call(Map config){
     
     stage('Build') {
        if(config.buildTool == 'gradle') {
-           sh "${path} ${gradle}/bin/gradle build"
-           sh "${path} ${gradle}/bin/gradle publishMavenJavaPublicationToMavenRepository"
+           sh "${path} ${gradle}/bin/gradle build --no-daemon"
+           sh "${path} ${gradle}/bin/gradle publishMavenJavaPublicationToMavenRepository --no-daemon"
        }else{
            //maven
            sh "${path} ${maven}/bin/mvn clean deploy -Dmaven.test.skip=true"
