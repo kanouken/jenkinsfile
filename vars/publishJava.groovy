@@ -24,7 +24,11 @@ def call(Map config){
         }
     }
     if(config.triggerJob && config.triggerJob != null){
-       build job: config.triggerJob + "/" + BRANCH_NAME, wait: false
+       def branch = BRANCH_NAME
+       if(BRANCH_NAME.contains("/")){
+           branch = BRANCH_NAME.split("/")[0] + '%252F' + BRANCH_NAME.split("/")[1]
+       } 
+       build job: config.triggerJob + "/" + branch, wait: false
     }
    
 }
