@@ -18,7 +18,6 @@ def getChangeString() {
  for (int j = 0; j < entries.length; j++) {
  def entry = entries[j]
  truncated_msg = entry.msg.take(MAX_MSG_LEN)
- sendMail = sendMail+"${entry.author}@demo.com,"
  changeString += "--${truncated_msg}  [${entry.author}]\n"
  }
  }
