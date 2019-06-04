@@ -45,7 +45,7 @@ def call(Map config) {
        }
      
            if(config.buildTool == 'gradle'){
-              	sh "${path} ${gradle}/bin/gradle clean build -i -x test"
+              	sh "${path} ${gradle}/bin/gradle clean build -i -x test --no-daemon"
             }else{
                 sh "${path} ${maven}/bin/mvn clean package -e -U -Dmaven.test.skip=true"
             } 
