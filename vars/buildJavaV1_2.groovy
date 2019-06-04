@@ -1,8 +1,31 @@
   
 def notifyBuild(String groupId, String result,String jobName) {
-    def template = "勿回复此消息\n ${jobName}-${result}\n ${env.BUILD_URL}"
+    //
+    def changeString =  getChangeString()
+    def template = "勿回复此消息\n ${jobName}-${result}\n ${env.BUILD_URL} \n ${changeString}"
     // Send notifications
     sh "curl  -d 'group_id=${groupId}&message=${template}' 'coolq:5700/send_group_msg'"
+}
+
+@NonCPS
+def getChangeString() {
+ MAX_MSG_LEN = 100
+ def changeString = ""
+ echo "Gathering SCM changes"
+ def changeLogSets = currentBuild.changeSets
+ for (int i = 0; i < changeLogSets.size(); i++) {
+ def entries = changeLogSets[i].items
+ for (int j = 0; j < entries.length; j++) {
+ def entry = entries[j]
+ truncated_msg = entry.msg.take(MAX_MSG_LEN)
+ changeString += "--${truncated_msg}  [${entry.author}]\n"
+ }
+ }
+
+ if (!changeString) {
+ changeString = " - 无"
+ }
+ return changeString
 }
 
 //vars/build.groovy main 方法
