@@ -1,8 +1,31 @@
   
 def notifyBuild(String groupId, String result,String jobName) {
-    def template = "勿回复此消息\n ${jobName}-${result}\n ${env.BUILD_URL}"
+    //
+    def changeString =  getChangeString()
+    def template = "勿回复此消息\n ${jobName}-${result}\n ${env.BUILD_URL} \n ${changeString}"
     // Send notifications
     sh "curl  -d 'group_id=${groupId}&message=${template}' 'coolq:5700/send_group_msg'"
+}
+
+@NonCPS
+def getChangeString() {
+ MAX_MSG_LEN = 100
+ def changeString = ""
+ echo "Gathering SCM changes"
+ def changeLogSets = currentBuild.changeSets
+ for (int i = 0; i < changeLogSets.size(); i++) {
+ def entries = changeLogSets[i].items
+ for (int j = 0; j < entries.length; j++) {
+ def entry = entries[j]
+ truncated_msg = entry.msg.take(MAX_MSG_LEN)
+ changeString += "--${truncated_msg}  [${entry.author}]\n"
+ }
+ }
+
+ if (!changeString) {
+ changeString = " - 无"
+ }
+ return changeString
 }
 
 //vars/build.groovy main 方法
@@ -13,7 +36,7 @@ def call(Map config) {
    def jobName
    def tag
    def deploy = true
-   def env
+   def build  = true
    //docker registry  此变量在jenkins已在全局变量配置
    def registry = dockerRegistry
    //k8s 部署到k8s空间    
@@ -25,25 +48,34 @@ def call(Map config) {
    try{
    //编译代码 目前支持 maven 、gradle
    stage('Build') {
+         print BRANCH_NAME
+         print BUILD_TAG
         jobName = JOB_NAME.substring(0,JOB_NAME.indexOf("/"))
-        if (BRANCH_NAME.startsWith("release-")) {
-        //release
-        imageName = jobName + ":" + BRANCH_NAME
-        namespace = namespace + "-prd"  
-        env = "prd"
-       }else if(BRANCH_NAME == "master"){
-        imageName = jobName + ":" + BRANCH_NAME
-        env = "test"
-       }else
-       {
-        deploy = false
+        //测试环境
+        if (BRANCH_NAME.startsWith("release/")) {
+        imageName = jobName + ":" + BRANCH_NAME.replaceAll("release","rc").replaceAll("/","-")
+        namespace = namespace + "-test"
+        //开发环境  
+       }else if(BRANCH_NAME == "develop"){
+         imageName = jobName + ":unstable"
+         namespace = namespace + "-dev"
+        //uat && prd   
+       }else if(BRANCH_NAME.startsWith("v")){
+            imageName = jobName + ":" +  BRANCH_NAME
+            namespace = namespace + "-uat" 
+            //prd 手动发布
+            deploy = false 
+        //no deploy
+       }else{
+          build = false 
+          deploy = false
        }
      
            if(config.buildTool == 'gradle'){
               	sh "${path} ${gradle}/bin/gradle clean build -i -x test --no-daemon"
             }else{
-                sh "${path} ${maven}/bin/mvn clean package -e -U -P ${env} -Dmaven.test.skip=true"
-            }
+                sh "${path} ${maven}/bin/mvn clean package -e -U -Dmaven.test.skip=true"
+            } 
 
    }
    
@@ -52,8 +84,8 @@ def call(Map config) {
         withSonarQubeEnv() {
             sh "${path} ${sonarScanner}/bin/sonar-scanner"
         }
-    }
-   if(deploy) { 
+   }
+   if(build) {
    // docker 编译镜像
    stage('docker build') {
    		sh "${path} docker build -t ${imageName} ."
@@ -75,7 +107,9 @@ def call(Map config) {
    		sh "${path} docker rmi ${imageName}"
    		sh "${path} docker rmi ${tag}"
    }
-   
+   }
+
+   if(deploy) {
    //部署服务
    stage("deploy") {
    		//首次部署需要自行创建服务
@@ -87,8 +121,9 @@ def call(Map config) {
    	 	  
         }
    }
-
+  
    }
+   
    
 
    
