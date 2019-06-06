@@ -52,7 +52,12 @@ def call(Map config){
         }
         //sh "rm -rf ./node_modules/cyberway-msf-frontend-* && rm -f ./package-lock.json"
         sh "npm install --registry=http://192.168.0.5:8980/repository/npmGroup/"
-        sh "npm run build"
+        if(config.buildScript && config.buildScript != null){
+          sh "${config.buildScript}"
+        }else{
+          sh "npm run build"
+        }
+        
 
     
 
