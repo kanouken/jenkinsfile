@@ -9,6 +9,12 @@ def call(Map config){
    stage('publish') {
          sh "${nodejs}/bin/npm publish"
    }
-   build job: config.triggerJob, wait: false
+     if(config.triggerJob && config.triggerJob != null){
+       def branch = BRANCH_NAME
+       if(BRANCH_NAME.contains("/")){
+           branch = BRANCH_NAME.split("/")[0] + '%2F' + BRANCH_NAME.split("/")[1]
+       } 
+       build job: config.triggerJob + "/" + branch, wait: false
+    }
 }
 }
