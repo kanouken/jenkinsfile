@@ -14,6 +14,7 @@ def call(Map config){
    def registry = dockerRegistry
    def namespace = config.namespace
    def deploy = true
+   def build = true
    //拉取代码
    checkout scm
 
@@ -39,13 +40,11 @@ def call(Map config){
        }else if(BRANCH_NAME.startsWith("v")){
             imageName = jobName + ":" +  BRANCH_NAME
             namespace = namespace + "-uat"  
+            deploy = false
         //no deploy
-       }else if(BRANCH_NAME == "master"){
-        //FIXME 为了之前项目的测试 加的这一条件 全部转化后 请去掉
-        imageName = jobName + ":master"
-          
        }else{
           deploy = false
+          build = false 
        }
        
         if(config.preScript && config.preScript != null){
@@ -63,7 +62,7 @@ def call(Map config){
     
 
    }
-   if(deploy){
+   if(build){
    // docker 编译镜像
    stage('docker build') {
    		sh "docker build -t ${imageName} ."
@@ -85,7 +84,9 @@ def call(Map config){
    		sh "docker rmi ${imageName}"
    		sh "docker rmi ${tag}"
    }
+   }
 
+   if(deploy) {
   //部署服务
    stage("deploy") {
    		//首次部署需要自行创建服务
