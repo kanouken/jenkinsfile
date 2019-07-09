@@ -32,7 +32,8 @@ def getChangeString() {
 //vars/build.groovy main 方法
 def call(Map config) {
    node {
-   def path  = config.path == null ? "" : "cd " + config.path + " &&"    
+   def path  = config.path == null ? "" : "cd " + config.path + " &&"   
+   def deploymentName = config.deploymentName
    def imageName 
    def jobName
    def tag
@@ -112,7 +113,11 @@ def call(Map config) {
    	  		print "请在rancher 中创建,命名为 : ${jobName}-deploy" 
    	 	}else{
    	 	//在 k8s 中更新
-   		  sh "/var/jenkins_home/rancher_cli/rancher kubectl patch deployment ${jobName} -p  '{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"build-num\":\"$BUILD_NUMBER\"}}}}}' -n ${namespace}"
+            
+          if( deploymentName == null ){
+              deploymentName = jobName
+          }  
+   		  sh "/var/jenkins_home/rancher_cli/rancher kubectl patch deployment ${deploymentName} -p  '{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"build-num\":\"$BUILD_NUMBER\"}}}}}' -n ${namespace}"
    	 	  
         }
    }
