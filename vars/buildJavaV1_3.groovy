@@ -38,6 +38,7 @@ def call(Map config) {
    def jobName
    def tag
    def deploy = true
+   def build  = true
    //docker registry  此变量在jenkins已在全局变量配置
    def registry = dockerRegistry
    //k8s 部署到k8s空间    
@@ -64,8 +65,10 @@ def call(Map config) {
        }else if(BRANCH_NAME.startsWith("v")){
             imageName = jobName + ":" +  BRANCH_NAME
             namespace = namespace + "-uat"  
+            deploy = false 
         //no deploy
        }else{
+          build = false 
           deploy = false
        }
      
@@ -83,7 +86,7 @@ def call(Map config) {
             sh "${path} ${sonarScanner}/bin/sonar-scanner"
         }
    }
-   if(deploy) {
+   if(build) {
    // docker 编译镜像
    stage('docker build') {
    		sh "${path} docker build -t ${imageName} ."
@@ -105,7 +108,9 @@ def call(Map config) {
    		sh "${path} docker rmi ${imageName}"
    		sh "${path} docker rmi ${tag}"
    }
-   
+   }
+
+   if(deploy){
    //部署服务
    stage("deploy") {
    		//首次部署需要自行创建服务
@@ -121,8 +126,8 @@ def call(Map config) {
    	 	  
         }
    }
-  
    }
+   
    
    
 
