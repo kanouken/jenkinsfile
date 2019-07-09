@@ -8,6 +8,7 @@ def call(Map config){
   node {
    def imageName
    def jobName
+   def deploymentName = config.deploymentName
    def tag
    //docker registry
    def registry = dockerRegistry
@@ -92,7 +93,10 @@ def call(Map config){
    	  		print "请在rancher 中创建,命名为 : ${jobName}-deploy"
    	 	}else{
    	 	//在 k8s 中更新
-   		    sh "/var/jenkins_home/rancher_cli/rancher kubectl patch deployment ${jobName} -p  '{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"build-num\":\"$BUILD_NUMBER\"}}}}}' -n ${namespace}"
+          if(deploymentName == null){
+            deploymentName = jobName
+          }
+   		    sh "/var/jenkins_home/rancher_cli/rancher kubectl patch deployment ${deploymentName} -p  '{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"build-num\":\"$BUILD_NUMBER\"}}}}}' -n ${namespace}"
    	 	}
             }
    }
